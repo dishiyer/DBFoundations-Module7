@@ -4,6 +4,7 @@
 -- Desc: This file demonstrates how to use Functions
 -- Change Log: When,Who,What
 -- 2022-02-26, DIyer, created and modified file for Assignment07
+-- 2022-03-02, DIyer, updated based on Assignment07 review
 --**************************************************************************--
 Begin Try
 	Use Master;
@@ -194,15 +195,26 @@ Print
 -- Use a function to format the price as US dollars.
 -- Order the result by the product name.
 
--- <Put Your Code Here> --
-
+Select
+	P.ProductName,
+	UnitPrice = Format(P.UnitPrice, 'C', 'en-us')
+From vProducts as P
+Order By 1;
 go
 
 -- Question 2 (10% of pts): 
 -- Show a list of Category and Product names, and the price of each product.
 -- Use a function to format the price as US dollars.
 -- Order the result by the Category and Product.
--- <Put Your Code Here> --
+
+Select
+	C.CategoryName,
+	P.ProductName,
+	UnitPrice = Format(P.UnitPrice, 'C' , 'en-us')
+From vCategories as C
+	Inner Join vProducts as P
+		On C.CategoryID = P.CategoryID
+Order By 1,2,3;
 
 go
 
@@ -211,8 +223,14 @@ go
 -- Format the date like 'January, 2017'.
 -- Order the results by the Product and Date.
 
--- <Put Your Code Here> --
-
+Select
+	P.ProductName,
+	[InventoryDate] = DateName(MM, I.InventoryDate) + ', ' + DateName(YY, I.InventoryDate),
+	[InventoryCount] = I.[Count]
+From vProducts as P
+	Inner Join vInventories as I
+		On P.ProductID = I.ProductID
+Order By 1,2,3;
 go
 
 -- Question 4 (10% of pts): 
@@ -221,10 +239,22 @@ go
 -- Format the date like 'January, 2017'.
 -- Order the results by the Product and Date.
 
--- <Put Your Code Here> --
+Create
+View vProductInventories
+As
+	Select Top 1000000
+		P.ProductName,
+		[InventoryDate] = DateName(MM, I.InventoryDate) + ',' + DateName(YY, I.InventoryDate),
+		[InventoryCount] = I.[Count]
+	From vProducts as P
+		Inner Join vInventories as I
+			On P.ProductID = I.ProductID
+Order By 1, Month([InventoryDate]),3;
+
 go
 
 -- Check that it works: Select * From vProductInventories;
+Select * From vProductInventories;
 go
 
 -- Question 5 (10% of pts): 
@@ -233,9 +263,24 @@ go
 -- Format the date like 'January, 2017'.
 -- Order the results by the Product and Date.
 
--- <Put Your Code Here> --
+Create
+View vCategoryInventories
+As
+	Select Top 1000000
+		C.CategoryName,
+		[InventoryDate] = DateName(MM, I.InventoryDate) + ', ' + DateName(YY, I.InventoryDate),
+		[InventoryCountByCategory] = Sum(I.[Count])
+	From vCategories as C
+		Inner Join vProducts as P
+			On C.CategoryID = P.CategoryID
+		Inner Join vInventories as I
+			On P.ProductID = I.ProductID
+	Group By C.CategoryName, InventoryDate
+Order By CategoryName, MONTH(InventoryDate), InventoryCountByCategory;
+
 go
 -- Check that it works: Select * From vCategoryInventories;
+Select * From vCategoryInventories;
 go
 
 -- Question 6 (10% of pts): 
@@ -245,10 +290,20 @@ go
 -- Order the results by the Product and Date. 
 -- This new view must use your vProductInventories view.
 
--- <Put Your Code Here> --
+Create 
+View vProductInventoriesWithPreviousMonthCounts
+As
+	Select Top 100000
+		ProductName,
+		InventoryDate,
+		InventoryCount,
+		[PreviousMonthCount] = IIF(InventoryDate Like ('January%'), 0, IsNull(Lag(InventoryCount) Over (Order By ProductName, Year(InventoryDate)), 0) )
+	From vProductInventories
+Order By 1,  MONTH(InventoryDate),3;
 go
 
 -- Check that it works: Select * From vProductInventoriesWithPreviousMonthCounts;
+Select * From vProductInventoriesWithPreviousMonthCounts;
 go
 
 -- Question 7 (15% of pts): 
@@ -258,10 +313,25 @@ go
 -- Display months with increased counts as 1, same counts as 0, and decreased counts as -1. 
 -- Varify that the results are ordered by the Product and Date.
 
--- <Put Your Code Here> --
+Create
+View vProductInventoriesWithPreviousMonthCountsWithKPIs
+As
+	Select Top 1000000
+		ProductName,
+		InventoryDate,
+		InventoryCount,
+		[PreviousMonthCount],
+		[CountVsPreviousCountKPI] = IsNull(Case
+			When InventoryCount > [PreviousMonthCount] Then 1
+			When InventoryCount = [PreviousMonthCount] Then 0
+			When InventoryCount < [PreviousMonthCount] Then -1
+			End, 0)
+	From vProductInventoriesWithPreviousMonthCounts
+Order By 1, MONTH(InventoryDate), 3;
 
 -- Important: This new view must use your vProductInventoriesWithPreviousMonthCounts view!
 -- Check that it works: Select * From vProductInventoriesWithPreviousMonthCountsWithKPIs;
+Select * From vProductInventoriesWithPreviousMonthCountsWithKPIs;
 go
 
 -- Question 8 (25% of pts): 
@@ -272,14 +342,26 @@ go
 -- The function must use the ProductInventoriesWithPreviousMonthCountsWithKPIs view.
 -- Varify that the results are ordered by the Product and Date.
 
--- <Put Your Code Here> --
+Create 
+Function fProductInventoriesWithPreviousMonthCountsWithKPIs (@KPIValue int)
+Returns Table
+As
+	Return Select
+		ProductName,
+		InventoryDate,
+		InventoryCount,
+		[PreviousMonthCount],
+		[CountVsPreviousCountKPI]
+	From vProductInventoriesWithPreviousMonthCountsWithKPIs
+	Where [CountVsPreviousCountKPI] = @KPIValue;
+
 go
 
-/* Check that it works:
+-- Check that it works:
 Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(1);
 Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(0);
 Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(-1);
-*/
+--
 go
 
 /***************************************************************************************/
