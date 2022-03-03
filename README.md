@@ -8,7 +8,7 @@
 # Assignment 07 – Functions
 
 ## Introduction
-The seventh module covered Functions and how to use functions to get information from a database.
+The seventh module covered **Functions** and how to use functions to get information from a database.
 ## Summary
 In this module, some of the key topics I learned about are:
 1.	Functions: aggregate functions, selecting with common functions, partitioned functions
