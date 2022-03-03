@@ -16,8 +16,8 @@ In this module, some of the key topics I learned about are:
 3.	User Defined Functions
 4.	Creating Advanced GitHub pages
 ## Questions 
-1.	Explain when you would use a SQL UDF.
-2.	Explain are the differences between Scalar, Inline, and Multi-Statement Functions.
+>1.	Explain when you would use a SQL UDF.
+>2.	Explain are the differences between Scalar, Inline, and Multi-Statement Functions.
 
 ## Response
 ### When to use a SQL UDF
